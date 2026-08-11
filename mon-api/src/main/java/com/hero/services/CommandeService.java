@@ -40,7 +40,8 @@ public class CommandeService {
     }
 
     @Transactional
-    public Commande creerCommande(Client client, List<LigneCommande> lignes) {
+    public Commande creerCommande(Client client, List<LigneCommande> lignes, String adresseLivraison,
+                                   String ville, String codePostal, String pays, String modePaiement) {
         // 1. Vérifier le stock pour chaque produit
         for (LigneCommande ligne : lignes) {
             Produit produit = ligne.getProduit();
@@ -51,7 +52,7 @@ public class CommandeService {
         }
 
         // 2. Créer la commande
-        Commande commande = new Commande(client, lignes);
+        Commande commande = new Commande(client, lignes, adresseLivraison, ville, codePostal, pays, modePaiement);
         commande.setDateCommande(LocalDateTime.now());
         commande.setStatut("EN_ATTENTE");
 

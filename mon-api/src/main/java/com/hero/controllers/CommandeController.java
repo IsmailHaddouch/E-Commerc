@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.hero.dto.CheckoutRequest;
 import com.hero.dto.CommandeRequest;
 import com.hero.models.Client;
 import com.hero.models.Commande;
@@ -46,6 +47,14 @@ public class CommandeController {
         return commandeService.obtenirToutesLesCommandes();
     }
 
+    // 1b. Obtenir les commandes d'un client
+    @GetMapping("/client/{clientId}")
+    public ResponseEntity<List<Commande>> getCommandesParClient(@PathVariable Long clientId) {
+        return clientService.obtenirClientParId(clientId)
+                .map(client -> ResponseEntity.ok(commandeService.obtenirCommandesParClient(client)))
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
     // 2. Créer une nouvelle commande (Utilise le DTO)
     @PostMapping("/client/{clientId}")
     public ResponseEntity<Commande> creerCommande(
@@ -68,7 +77,64 @@ public class CommandeController {
                 lignes.add(new LigneCommande(produitOpt.get(), item.getQuantite()));
             }
 
-            Commande nouvelleCommande = commandeService.creerCommande(clientOpt.get(), lignes);
+            // On crée une commande basique sans adresse/paiement créés ici
+            Commande nouvelleCommande = commandeService.creerCommande(
+                clientOpt.get(),
+                lignes,
+                "Adresse client non fournie",
+                "Ville client non fournie",
+                "00000",
+                "France",
+                "Aucun"
+            );
+            return new ResponseEntity<>(nouvelleCommande, HttpStatus.CREATED);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(null);
+        }
+    }
+
+    // 2b. Commande invité / checkout
+    @PostMapping("/checkout")
+    public ResponseEntity<Commande> checkoutCommande(
+            @RequestBody CheckoutRequest request) {
+        if (request.getNom() == null || request.getNom().isBlank() ||
+            request.getPrenom() == null || request.getPrenom().isBlank() ||
+            request.getEmail() == null || request.getEmail().isBlank() ||
+            request.getTelephone() == null || request.getTelephone().isBlank() ||
+            request.getItems() == null || request.getItems().isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        Client client = clientService.trouverOuCreerClientParEmail(
+            request.getNom(), request.getPrenom(), request.getEmail(), request.getTelephone());
+
+        try {
+            if (request.getAdresseLivraison() == null || request.getAdresseLivraison().isBlank() ||
+                request.getVille() == null || request.getVille().isBlank() ||
+                request.getCodePostal() == null || request.getCodePostal().isBlank() ||
+                request.getPays() == null || request.getPays().isBlank() ||
+                request.getModePaiement() == null || request.getModePaiement().isBlank()) {
+                return ResponseEntity.badRequest().build();
+            }
+
+            List<LigneCommande> lignes = new ArrayList<>();
+            for (CommandeRequest item : request.getItems()) {
+                Optional<Produit> produitOpt = produitService.obtenirProduitParId(item.getProduitId());
+                if (produitOpt.isEmpty()) {
+                    return ResponseEntity.badRequest().build();
+                }
+                lignes.add(new LigneCommande(produitOpt.get(), item.getQuantite()));
+            }
+
+            Commande nouvelleCommande = commandeService.creerCommande(
+                client,
+                lignes,
+                request.getAdresseLivraison(),
+                request.getVille(),
+                request.getCodePostal(),
+                request.getPays(),
+                request.getModePaiement()
+            );
             return new ResponseEntity<>(nouvelleCommande, HttpStatus.CREATED);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(null);

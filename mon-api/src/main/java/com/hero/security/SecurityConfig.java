@@ -1,38 +1,58 @@
 package com.hero.security;
 
-import org.springframework.http.HttpMethod;
+import java.util.Arrays;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.Arrays;
-
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
-   @Bean
+    private final UserDetailsService userDetailsService;
+
+    public SecurityConfig(UserDetailsService userDetailsService) {
+        this.userDetailsService = userDetailsService;
+    }
+
+    @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+            .userDetailsService(userDetailsService)
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                // Routes publiques (Tout le monde peut voir les produits)
+                // Routes publiques (client sans authentification)
                 .requestMatchers(HttpMethod.GET, "/api/produits").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/produits/**").permitAll()
-                
+                .requestMatchers(HttpMethod.GET, "/api/panier/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/panier/**").permitAll()
+                .requestMatchers(HttpMethod.DELETE, "/api/panier/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/auth/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/commandes/checkout").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/commandes/client/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/commandes/client/**").permitAll()
+                .requestMatchers(HttpMethod.PUT, "/api/commandes/*/payer").permitAll()
+
                 // Routes Admin uniquement
-                .requestMatchers("/api/produits/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/produits").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/produits/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/produits/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/produits/*/promo").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/produits/*/promo").hasRole("ADMIN")
                 .requestMatchers("/api/clients/**").hasRole("ADMIN")
-                .requestMatchers("/api/commandes/**").hasRole("ADMIN")
-                .requestMatchers("/api/panier/**").hasRole("ADMIN") // AJOUTÉ
-                
+                .requestMatchers(HttpMethod.GET, "/api/commandes").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/commandes/*/statut").hasRole("ADMIN")
+
                 // Tout le reste est authentifié
                 .anyRequest().authenticated()
             )

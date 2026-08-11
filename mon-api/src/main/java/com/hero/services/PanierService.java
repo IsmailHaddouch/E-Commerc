@@ -1,10 +1,17 @@
 package com.hero.services;
 
-import com.hero.models.*;
-import com.hero.repository.*;
+import java.util.Optional;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.util.Optional;
+
+import com.hero.models.Client;
+import com.hero.models.Panier;
+import com.hero.models.PanierItem;
+import com.hero.models.Produit;
+import com.hero.repository.PanierItemRepository;
+import com.hero.repository.PanierRepository;
+import com.hero.repository.ProduitRepository;
 
 @Service
 public class PanierService {
@@ -40,6 +47,19 @@ public class PanierService {
             itemExistant.get().setQuantite(itemExistant.get().getQuantite() + quantite);
         } else {
             panier.getItems().add(new PanierItem(produit, quantite));
+        }
+
+        return panierRepository.save(panier);
+    }
+
+    @Transactional
+    public Panier retirerDuPanier(Client client, Long panierItemId) {
+        Panier panier = panierRepository.findByClient(client)
+            .orElseThrow(() -> new RuntimeException("Panier introuvable"));
+
+        boolean supprime = panier.getItems().removeIf(item -> item.getId().equals(panierItemId));
+        if (!supprime) {
+            throw new RuntimeException("Article introuvable dans le panier");
         }
 
         return panierRepository.save(panier);

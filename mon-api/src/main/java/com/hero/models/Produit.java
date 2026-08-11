@@ -14,7 +14,8 @@ public class Produit {
     private double prix;
     private String categorie;
     private String imageUrl; // Déclaré au bon endroit
-    
+    private String caracteristiques; // Description flexible des tailles, couleurs, volumes, etc.
+
     // NOUVEAUX CHAMPS POUR LES PROMOS
     private Double prixPromo; // Si null, pas de promo
     private boolean enPromo = false; // Par défaut, pas en promo
@@ -32,6 +33,14 @@ public class Produit {
         this.imageUrl = imageUrl;
     }
 
+    public Produit(String nom, double prix, String categorie, String imageUrl, String caracteristiques) {
+        this.nom = nom;
+        this.prix = prix;
+        this.categorie = categorie;
+        this.imageUrl = imageUrl;
+        this.caracteristiques = caracteristiques;
+    }
+
     // Getters et Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -45,6 +54,9 @@ public class Produit {
     
     public String getImageUrl() { return imageUrl; }
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+
+    public String getCaracteristiques() { return caracteristiques; }
+    public void setCaracteristiques(String caracteristiques) { this.caracteristiques = caracteristiques; }
 
     public int getQuantiteStock() { return quantiteStock; }
     public void setQuantiteStock(int quantiteStock) { this.quantiteStock = quantiteStock; }

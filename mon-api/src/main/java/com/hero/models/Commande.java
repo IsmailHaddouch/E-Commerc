@@ -18,17 +18,30 @@ public class Commande {
     private LocalDateTime dateCommande = LocalDateTime.now();
     private double montantTotal;
     private String statut; // "EN_ATTENTE", "PAYEE", "EXPEDIEE", "LIVREE"
+    private String adresseLivraison;
+    private String ville;
+    private String codePostal;
+    private String pays;
+    private String modePaiement;
+    private boolean paiementEffectue = false;
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "commande_id")
     private List<LigneCommande> lignes = new ArrayList<>();
 
     public Commande() {}
-    public Commande(Client client, List<LigneCommande> lignes) {
+    public Commande(Client client, List<LigneCommande> lignes, String adresseLivraison,
+                    String ville, String codePostal, String pays, String modePaiement) {
         this.client = client;
         this.lignes = lignes;
         this.montantTotal = lignes.stream().mapToDouble(LigneCommande::getTotalLigne).sum();
         this.statut = "EN_ATTENTE";
+        this.adresseLivraison = adresseLivraison;
+        this.ville = ville;
+        this.codePostal = codePostal;
+        this.pays = pays;
+        this.modePaiement = modePaiement;
+        this.paiementEffectue = false;
     }
 
     // Getters et Setters simplifiés (à ajouter si nécessaire)
